@@ -1,11 +1,12 @@
-//If word size is greater than the words of length text it still runs.
-
+//The hangman ---- does not fill with the right input. 
+//The number of guesses dont drop on wrong answer.
+//At the end, when its cool and good, we wanna choose the other option when the user chooses one.
 
 import java.util.*;
 
 public class HangmanManager {
    private List<String> dictionaryList = new ArrayList<>();
-   private Set<String> leftovers = new TreeSet<>(); //This is so we can return the words that are being considered.
+   private Set<String> leftovers = new HashSet<>(); //This is so we can return the words that are being considered.
    private int length;
    private int maxWrong;
    private Set<Character> guessedSet = new TreeSet<>(); //To see what char guesses have bene aded
@@ -54,60 +55,79 @@ public class HangmanManager {
    }
    
    public int record(char guess) {
+      int bestSize = 0;
+      String bestSizeWord = "";
       guessedSet.add(guess);
-      Map<Integer, Set<String>> temporary = new TreeMap<>();
-      for(String x: dictionaryList) {
-         int count = 0; //Count helps us organize theMap
-         for(int i = 0; i < x.length(); i++) { //If character count of the guess character is equal to 1/2/3/ etc.
-            if(x.charAt(i) == guess) {
-               count++;
+      List<Integer> temp = new ArrayList<>();
+      Map<String, Set<String>> theMap = new TreeMap();
+      for(String x: leftovers) { //Since at start we say leftover is the same as Dictionary words
+         temp.clear(); 
+         if(x.indexOf(guess) > -1 && x.indexOf(guess) < x.length()) {
+            for(int i = 0; i< x.length(); i++) {
+               if(x.charAt(i) == guess) {
+                  temp.add(i);
+               }
             }
+         } 
+         
+         String forMap = "!";
+         for(int i = 0; i < temp.size(); i++) {
+            forMap = forMap + temp.get(i);
          }
          
-         //If theMap contains anything in that key prior then just add to it.
-         if(temporary.containsKey(count)) {
-            temporary.get(count).add(x);
-         } else { //Otherwise create a set and put these things in.
+         if(theMap.containsKey(forMap)) {
+            theMap.get(forMap).add(x);
+         } else {
             Set<String> t = new TreeSet<>();
             t.add(x);
-            temporary.put(count, t);
+            theMap.put(forMap, t);
          }
          
-            
-      }
-            
-      //Here we check if the size of any other key is greater than the case where there is no such character so we can cut a guess.
-      for(int z : temporary.keySet()) {
-         if(temporary.containsKey(0)) {
-            if(temporary.get(z).size() > temporary.get(0).size()) {
-               maxWrong--;
-            }
-         }
       }
       
-      int bestSize = 0;
-      
-      for(int z: temporary.keySet()) {
-         if(temporary.get(z).size() > bestSize) {
-            bestSize = z;
+      System.out.println(theMap);
+      //This gets the best size of the pattern.
+      for(String z: theMap.keySet()) {
+         if(theMap.get(z).size() > bestSize) {
+            bestSize = theMap.get(z).size();
+            bestSizeWord = z;
          }         
       }
       
-      //Test
-      for(int z: temporary.keySet()) {
-         if(!temporary.get(z).equals(temporary.get(bestSize))) {
-            temporary.remove(z);
+      //Here we want to filter the theMap of excessive words that are not best size.
+      Set<String> takePlace = new TreeSet<>();
+      for(String z: theMap.keySet()) {
+         if(!z.equals(bestSizeWord)) {
+            takePlace.add(z);
          }
       }
       
-      for(int x: temporary.keySet()) {
-         if(!leftovers.contains(temporary.get(x))) {
-            leftovers.remove(temporary.get(x));
-         }
+      for(String z: takePlace) {
+         theMap.remove(z);
       }
-
       
-      return bestSize;
+      //Here we try to reduce what leftovers is by setting it equal to only best size word.
+      Set<String> temporary = new TreeSet<>();
+      for(String z: theMap.get(bestSizeWord)) {
+         temporary.add(z);
+      }
+      
+      leftovers.retainAll(temporary);
+      //
+      
+      //How many tells us how many of that characters there are in the largest pattern.
+      int howMany = 0;
+      for(String x : leftovers) {
+         howMany = 0;
+         for(int i = 0; i< x.length(); i++) {
+            if(x.charAt(i) == guess) {
+               howMany++;
+            }
+         }
+      }  
+      
+      
+      return howMany;
    }
 
 }
